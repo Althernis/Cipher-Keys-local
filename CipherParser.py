@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__    = "1.0.0"
+__version__    = "1.1.0"
 __author__     = "Althernis"
 __maintainer__ = "Althernis"
 __status__     = "Production"
@@ -52,5 +52,16 @@ def getParser():
 
     parser.add_argument('--examples','-e', action='store_true',
                         help='Show some examples')
+
+    
+
+    parser.add_argument('--password','-p', action='store_true',
+                        help='Password to generate RSA Keys')
+    
+    parser.add_argument('--salt','-s', action='store_true',
+                        help='Salt to generate RSA Keys')
+
+    parser.add_argument('--delete','-d', action='store_true',
+                        help='Delete RSA Keys')
 
     return parser

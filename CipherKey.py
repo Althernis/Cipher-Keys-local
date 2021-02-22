@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__    = "1.0.0"
+__version__    = "1.1.0"
 __author__     = "Althernis"
 __maintainer__ = "Althernis"
 __status__     = "Production"
@@ -17,6 +17,7 @@ from Crypto.Hash import SHA256
 from Crypto.Util import Padding
 from Crypto.Random import get_random_bytes
 from Crypto.Cipher import PKCS1_OAEP
+from Crypto.Protocol.KDF import PBKDF2
 
 
 class CipherKey:
@@ -25,13 +26,24 @@ class CipherKey:
     AESTAM = 32  # AES Size
     IVTAM  = 16  # IV  size
 
-    def __init__(self, path):
+    def __init__(self, path, pss, salt):
         '''
         Constructor
 
         @param       path      path to store the keys
+        @param       pss       password to generate RSA Keys
+        @param       salt      salt to generate RSA Keys
         '''
         self.path = path
+        self.pss = pss
+        self.salt = salt
+        if pss and salt:
+            self.master_key = PBKDF2(pss, salt, count=16384)  # bigger count = better
+
+    def rand_gen_func(self, n):
+        # kluge: use PBKDF2 with count=1 and incrementing salt as deterministic PRNG
+        self.counter += 1
+        return PBKDF2(self.master_key, "rand_gen_func:%d" % self.counter, dkLen=n, count=1)
 
     ###################################################################
     ######                  INNER FUNCTIONS                      ######
@@ -239,7 +251,11 @@ class CipherKey:
 
         @retrun private key, public key
         '''
-        key = RSA.generate(size, e = 65537)
+        if self.pss and self.salt:
+            self.counter = 0
+            key = RSA.generate(size, e = 65537, randfunc=self.rand_gen_func)
+        else:
+            key = RSA.generate(size, e = 65537)
 
         # Key generation
         public_key   = key.publickey().exportKey('PEM')
